@@ -3,48 +3,87 @@ import styles from './calculator.module.css';
 
 export const Calculator = (props) => {
 	const OPERATIONS = ['+', '-', '*', '/'];
+  const NUMBER_PAD = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '0'];
 	let [result, setResult] = useState('');
+  let [fillState, setFillState] = useState(false);
   let [expression, setOperation] = useState({});
 
   const handleClick = (e) => {
-    if (result.length >= 16) {
+    if (result.length >= 16 && !fillState) {
       setResult("!So Much Big Input");
+      setFillState(true);
       return;
     }
     if (result.charAt(0) === '0') {
       result = result.slice(1, result.length)
     }
-		console.log(e.target);
-    setResult(result.concat(e.target.textContent));
-  }
-  const operationChoose = (e) => {
-    if (!expression.hasOwnProperty('operation')) {
-      setResult('');
-      setOperation({ ...expression, firstArgument: result, operation: e.target.textContent});
+    if (!fillState) {
+      setResult(result.concat(e.target.textContent));
     }
     else {
-      setResult('');
-      setOperation({ ...expression, secondArgument: result, result: e.target.textContent});
+      setResult(e.target.textContent);
+      setFillState(false);
     }
-  }
+  };
+  const calculate = (data) => {
+    if (fillState) {
+      return data;
+    }
+    let calculation = null;
+    switch (data.operation) {
+      case '+':
+        calculation = (Number(data.firstArgument) + Number(result)).toString();
+        break;
+      case '-':
+        calculation = (Number(data.firstArgument) - Number(result)).toString();
+        break;
+      case '/':
+        calculation = (Number(data.firstArgument) / Number(result)).toString();
+        break;
+      case '*':
+        calculation = (Number(data.firstArgument) * Number(result)).toString();
+        break;
+      default:
+        calculation = 'Error';
+        break;
+    }
+    setResult(calculation);
+    setFillState(true);
+    return {...data, firstArgument: calculation};
+  };
+  const setOperand = (evt) => {
+    return (data) => {
+      return {...data, operation: evt.target.textContent};
+    }
+  };
+  const operationChoose = (e) => {
+    if (!expression.hasOwnProperty('operation')) {
+      setOperation({ ...expression, firstArgument: result, operation: e.target.textContent});
+      setFillState(true);
+    }
+    else if (expression.operation !== e.target.textContent) {
+      if (fillState) {
+        setOperation(setOperand(e));
+      }
+      else {
+        setOperation(calculate);
+        setOperation(setOperand(e));
+      }
+    }
+    else {
+      setOperation(calculate);
+    }
+  };
+  const evaluate = () => {
+    setOperation(calculate);
+  };
   const clear = () => {
     setResult("");
+    setOperation({});
   }
   const backSpace = () => {
-    setResult(result.slice(0, result.length - 1))
-  }
-  const calculate = () => {
-    try {
-      result = eval(result).toString();
-      if (result.includes('.')) {
-        result =+ eval(result);
-        result = result.toFixed(4).toString();
-        setResult(result);
-      } else {
-        setResult(eval(result).toString());
-      }
-    } catch (err) {
-      setResult("Error");
+    if (!fillState) {
+      setResult(result.slice(0, result.length - 1))
     }
   }
 	return (
@@ -52,14 +91,14 @@ export const Calculator = (props) => {
 			<div className={styles.screen}>
 				<input type="text" value={result}  className={styles.field} />
 			</div>
-			<button onClick={calculate} className={styles.btn + ' ' + styles.operator}>=</button>
+			<button onClick={evaluate} className={styles.btn + ' ' + styles.operator}>=</button>
 			<div className={styles.panel}>
 				<div className={styles.numbers}>
-					{[...Array(10).keys()].reverse().map((item) => (
+					{NUMBER_PAD.map((item) => (
 						<button onClick={handleClick} className={styles.btn}>{item}</button>
 					))}
 					<button onClick={clear} className={styles.btn + ' ' + styles.operator}>C</button>
-					<button onClick={backSpace} className={styles.btn + ' ' + styles.operator}>.</button>
+					<button onClick={backSpace} className={styles.btn + ' ' + styles.operator}> {'<'} </button>
 				</div>
 				<div className={styles.operatorTab}>
 					{OPERATIONS.map((item) => (

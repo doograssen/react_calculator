@@ -15,7 +15,7 @@ export const Calculator = (props) => {
       return;
     }
     if (result.charAt(0) === '0') {
-      result = result.slice(1, result.length)
+      setResult(result.slice(1, result.length));
     }
     if (!fillState) {
       setResult(result.concat(value));
